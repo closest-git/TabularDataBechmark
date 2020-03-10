@@ -659,6 +659,7 @@ DATASETS = {
     'MICROSOFT': fetch_MICROSOFT,
     'YAHOO': fetch_YAHOO,
     'CLICK': fetch_CLICK,
+    #'Allstate': fetch_Allstate,
 }
 
 
