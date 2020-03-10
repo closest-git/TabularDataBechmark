@@ -1,3 +1,10 @@
+'''
+@Author: Yingshi Chen
+
+@Date: 2020-03-10 16:11:28
+@
+# Description: 
+'''
 import argparse
 from experiments import EXPERIMENTS
 from learners import *
@@ -15,20 +22,20 @@ def main():
 
     experiments_names = [
         'abalone',
-        'airline',
-        'epsilon',
-        'higgs',
+        #'airline',
+        #'epsilon',
+        #'higgs',
         'letters',
-        'msrank',
-        'msrank-classification',
-        'synthetic',
-        'synthetic-5k-features'
+        #'msrank',
+        #'msrank-classification',
+        #'synthetic',
+        #'synthetic-5k-features'
     ]
 
     learners = [
-        XGBoostLearner,
+        #XGBoostLearner,
         LightGBMLearner,
-        CatBoostLearner
+        #CatBoostLearner
     ]
 
     iterations = args.iterations

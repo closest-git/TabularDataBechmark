@@ -30,7 +30,8 @@ def update_result_file(track, result_file):
     with open(backup_result_file, 'w') as f:
         json.dump(results, f, indent=4)
 
-    os.rename(backup_result_file, result_file)
+    os.replace(backup_result_file, result_file)
+    #os.rename(backup_result_file, result_file)     #FileExistsError on windows
 
 
 class Experiment:
@@ -119,8 +120,8 @@ EXPERIMENTS = {
 
 
 def params_to_str(params):
-    info = ''
-    for key,value in params:
-        info = info.join('{}[{}]'.format(key, str(value)))
+    info=''
+    for key, value in params.items():
+        info = info+'{}_{}_'.format(key, value)
     return info
     #return ''.join(map(lambda (key, value): '{}[{}]'.format(key, str(value)), params.items()))

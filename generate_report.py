@@ -68,13 +68,13 @@ def get_experiment_stats(results, gpu, niter):
     else:
         tracks = read_results(results)
 
-    for experiment_name in tracks.iterkeys():
+    for experiment_name in tracks.keys():
         stats[experiment_name] = {}
 
         experiment_tracks = tracks[experiment_name]
         experiment_tracks = dict(filter(lambda track: gpu == ('GPU' in track[0]), experiment_tracks.items()))
 
-        for algorithm_name in experiment_tracks.iterkeys():
+        for algorithm_name in experiment_tracks.keys():
             stats[experiment_name][algorithm_name] = {}
             table_tracks = split_tracks(experiment_tracks[algorithm_name])
 
@@ -128,7 +128,7 @@ def print_all_in_one_table(stats, gpu, params, output):
         else:
             algorithm_name += "-CPU"
 
-        for experiment_name in stats.iterkeys():
+        for experiment_name in stats.keys():
             experiment_stats = stats[experiment_name]
 
             if params not in experiment_stats[algorithm_name]:

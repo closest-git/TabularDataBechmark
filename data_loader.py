@@ -6,7 +6,7 @@ import tarfile
 
 import numpy as np
 import pandas as pd
-
+import pickle
 from collections import namedtuple
 from sklearn import datasets
 from sklearn.model_selection import train_test_split
@@ -51,6 +51,7 @@ def get_from_cache(experiment_name, train_file, test_file):
     train = np.fromfile(train_file, sep='\t')
 
     n_features = DATASET_CHARACTERISTIC[experiment_name][1] + 1
+    assert train.shape[0] % n_features==0
     train = train.reshape((train.shape[0] // n_features, n_features))
 
     X_train = train[:, 1:]
@@ -58,7 +59,8 @@ def get_from_cache(experiment_name, train_file, test_file):
 
     print('loading test')
     test = np.fromfile(test_file, sep='\t')
-    test = test.reshape((test.shape[0] / n_features, n_features))
+    assert test.shape[0] % n_features==0
+    test = test.reshape((test.shape[0] // n_features, n_features))
 
     X_test = test[:, 1:]
     y_test = test[:, 0]
@@ -81,16 +83,20 @@ def save_to_cache(data, train_file, test_file):
 def get_dataset(experiment_name, dataset_dir):
     data_loader = DATA_LOADERS[experiment_name]
     cache_dir = os.path.join(dataset_dir, experiment_name)
-
-    train_file = os.path.join(cache_dir, "train.tsv")
-    test_file = os.path.join(cache_dir, "test.tsv")
-
     if not os.path.exists(cache_dir):
         os.makedirs(cache_dir)
+    isPickle,pkl_path = False, os.path.join(cache_dir, "train_test.pickle")
+    if isPickle and os.path.exists(pkl_path):
+        with open(pkl_path, "rb") as fp:
+            data = pickle.load(fp)
+        return data
+    else:
+        train_file = os.path.join(cache_dir, "train.tsv")
+        test_file = os.path.join(cache_dir, "test.tsv")
 
-    if all([os.path.exists(file_name) for file_name in [train_file, test_file]]):
-        print('Loading from cache')
-        return get_from_cache(experiment_name, train_file, test_file)
+        if all([os.path.exists(file_name) for file_name in [train_file, test_file]]):
+            print('Loading from cache')
+            return get_from_cache(experiment_name, train_file, test_file)
 
     X, y = data_loader(dataset_dir)
 
@@ -105,7 +111,11 @@ def get_dataset(experiment_name, dataset_dir):
             train_test_split(X, y, test_size=DEFAULT_TEST_SIZE, random_state=0)
 
     data = Data(experiment_name, X_train, X_test, y_train, y_test)
-    save_to_cache(data, train_file, test_file)
+    if isPickle:
+        with open(pkl_path, "wb") as fp:
+            pickle.dump(data, fp)
+    else:
+        save_to_cache(data, train_file, test_file)
 
     return data
 
