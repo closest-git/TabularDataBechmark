@@ -1,7 +1,7 @@
 import argparse
 import json
 import os
-
+from experiments import params_to_str
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -48,10 +48,10 @@ def plot_quality(tracks, from_iter, to_iter, figsize=FIGURE_SIZE, title=None, sa
 
     if title is not None:
         plt.title(title, FONT_DICT)
-
+    
     flat_tracks = []
     for alg in tracks.keys():
-        flat_tracks += tracks[alg]
+        flat_tracks += tracks[alg]     
 
     first_track = flat_tracks[0]
     task_type = first_track.task_type
@@ -156,8 +156,8 @@ def plot_quality_vs_time(tracks, best_quality, low_percent=0.8, num_bins=100, on
     plt.close(fig)
 
 
-def params_to_str(params):
-    return ''.join(map(lambda (key, value): '{}{}'.format(key, str(value)), params.items()))
+#def params_to_str(params):
+#    return ''.join(map(lambda (key, value): '{}{}'.format(key, str(value)), params.items()))
 
 
 def get_best(tracks, top=1):
@@ -167,7 +167,8 @@ def get_best(tracks, top=1):
     for algorithm_name in algorithms:
         best_scores = map(lambda track: track.get_best_score(), tracks[algorithm_name])
         idx_best = np.argsort(best_scores)[:top]
-        best_tracks[algorithm_name] = map(lambda idx: tracks[algorithm_name][idx], idx_best)
+        #best_tracks[algorithm_name] = map(lambda idx: tracks[algorithm_name][idx], idx_best)
+        best_tracks[algorithm_name] = list(map(lambda idx: tracks[algorithm_name][idx], idx_best))
 
     return best_tracks
 
@@ -215,7 +216,7 @@ def get_default_file_name(plot_type, params):
 
 
 def plot_experiment(tracks, experiment_name, args):
-    file_name = args.file_name if args.file_name else get_default_file_name(args.type, args.params_cases)
+    file_name = args.file_name if hasattr(args,'file_name') else get_default_file_name(args.type, args.params_cases)
     save_dir = os.path.join(args.out_dir, experiment_name)
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
@@ -294,7 +295,7 @@ def main():
 
     tracks = read_results(args.results_file)
 
-    for experiment_name in tracks.iterkeys():
+    for experiment_name in tracks.keys():
         plot_experiment(tracks[experiment_name], experiment_name, args)
 
 

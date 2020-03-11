@@ -114,12 +114,14 @@ def get_median_str(stat):
     return median_str
 
 
-def print_all_in_one_table(stats, gpu, params, output):
+def print_all_in_one_table(stats, gpu,learners, params, output):
     median_table = []
     total_table = []
 
     #index = ["catboost", "xgboost", "lightgbm"]
-    index = ["lightgbm"]
+    index = []
+    for learner in learners:
+        index.append(learner.name())
 
     for algorithm_name in index:
         median_row = []
@@ -132,6 +134,10 @@ def print_all_in_one_table(stats, gpu, params, output):
 
         for experiment_name in stats.keys():
             experiment_stats = stats[experiment_name]
+
+            if algorithm_name not in experiment_stats:
+                assert(False)
+                continue
 
             if params not in experiment_stats[algorithm_name]:
                 median_row.append(0.)

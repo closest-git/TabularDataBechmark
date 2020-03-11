@@ -8,6 +8,11 @@ import catboost as cat
 import lightgbm as lgb
 import numpy as np
 import xgboost as xgb
+mort_root = f'E:/LiteMORT/'
+if True:    #liteMORT    
+    sys.path.insert(1, f'{mort_root}/python-package/')
+    import litemort
+    from litemort import *
 from sklearn.metrics import mean_squared_error, accuracy_score
 
 RANDOM_SEED = 0
@@ -162,7 +167,6 @@ class XGBoostLearner(Learner):
 class LightGBMLearner(Learner):
     def __init__(self, data, task, metric, use_gpu):
         Learner.__init__(self)
-
         params = {
             'task': 'train',
             'boosting_type': 'gbdt',
@@ -222,11 +226,71 @@ class LightGBMLearner(Learner):
     def predict(self, n_tree):
         return self.learner.predict(self.test, num_iteration=n_tree)
 
+class LiteMORTLearner(Learner):
+    def __init__(self, data, task, metric, use_gpu):
+        Learner.__init__(self)
+        params = {
+            'task': 'train',
+            'boosting_type': 'gbdt',
+            'verbose': 0,
+            'random_state': RANDOM_SEED,
+            'bagging_freq': 1
+        }
+
+        if use_gpu:
+            params["device"] = "gpu"
+
+        if task == "regression":
+            params["objective"] = "regression"
+        elif task == "multiclass":
+            params["objective"] = "multiclass"
+            params["num_class"] = int(np.max(data.y_test)) + 1
+        elif task == "binclass":
+            params["objective"] = "binary"
+        else:
+            raise ValueError("Unknown task: " + task)
+
+        if metric == 'Accuracy':
+            if task == 'binclass':
+                params['metric'] = 'binary_error'
+            elif task == 'multiclass':
+                params['metric'] = 'multi_error'
+        elif metric == 'RMSE':
+            params['metric'] = 'rmse'
+
+        self.train = lgb.Dataset(data.X_train, data.y_train)
+        self.test = lgb.Dataset(data.X_test, data.y_test, reference=self.train)
+
+        self.default_params = params
+
+    @staticmethod
+    def name():
+        return 'litemort'
+
+    def _fit(self, tunable_params):
+        params_copy = deepcopy(tunable_params)
+
+        if 'max_depth' in params_copy:
+            params_copy['num_leaves'] = 2 ** params_copy['max_depth']
+            del params_copy['max_depth']
+
+        num_iterations = params_copy['iterations']
+        del params_copy['iterations']
+
+        params = Learner._fit(self, params_copy)
+        self.learner = lgb.train(
+            params,
+            self.train,
+            num_boost_round=num_iterations,
+            valid_sets=self.test
+        )
+
+    def predict(self, n_tree):
+        return self.learner.predict(self.test, num_iteration=n_tree)
 
 class CatBoostLearner(Learner):
     def __init__(self, data, task, metric, use_gpu):
         Learner.__init__(self)
-
         params = {
             'devices': [0],
             'logging_level': 'Info',
@@ -274,3 +338,13 @@ class CatBoostLearner(Learner):
             prediction = self.model.predict(self.test, ntree_end=n_tree)
 
         return prediction
+
+learners = [
+        #XGBoostLearner,
+        LightGBMLearner,
+        #CatBoostLearner
+    ]
+ALGORITHMS = [method + '-' + device_type
+              for device_type in ['CPU', 'GPU']
+              for method in [x.name() for x in learners]]
+print(f"======\tlearners={learners} \n======\tALGORITHMS={ALGORITHMS}\n======")

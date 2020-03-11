@@ -12,6 +12,7 @@ result.json
 *.userprefs
 
 # Build results
+plots/
 datasets
 [Dd]ebug/
 [Dd]ebugPublic/
@@ -308,3 +309,4 @@ ModelManifest.xml
 result_000.json
 result.json
 result.json
+result_123.json

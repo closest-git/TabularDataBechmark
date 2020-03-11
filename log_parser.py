@@ -3,12 +3,14 @@ import os
 import re
 import hashlib
 from collections import namedtuple
-
+from learners import ALGORITHMS
 import numpy as np
 
+'''
 ALGORITHMS = [method + '-' + device_type
               for device_type in ['CPU', 'GPU']
               for method in ['catboost', 'xgboost', 'lightgbm']]
+'''
 
 TIME_REGEX = r'Time: \[\s*(\d+\.?\d*)\s*\]\t'
 ELAPSED_REGEX = re.compile(r'Elapsed: (\d+\.?\d*)')
