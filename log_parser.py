@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import hashlib
 from collections import namedtuple
 
 import numpy as np
@@ -75,7 +76,11 @@ class Track:
 
     @staticmethod
     def hash(experiment_name, algorithm_name, task_type, parameters_str):
-        return hash(experiment_name + algorithm_name + task_type + parameters_str)
+        h = hashlib.md5()
+        experiment = str(experiment_name + algorithm_name + task_type + parameters_str).encode('utf-8')
+        h.update(experiment)
+        return h.hexdigest()
+        #return hash(experiment_name + algorithm_name + task_type + parameters_str)
 
     def __hash__(self):
         return Track.hash(self.experiment_name, self.algorithm_name, self.task_type, self.parameters_str)

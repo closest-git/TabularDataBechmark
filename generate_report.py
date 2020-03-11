@@ -75,10 +75,11 @@ def get_experiment_stats(results, gpu, niter):
         experiment_tracks = dict(filter(lambda track: gpu == ('GPU' in track[0]), experiment_tracks.items()))
 
         for algorithm_name in experiment_tracks.keys():
+            track_0 = experiment_tracks[algorithm_name][0]
             stats[experiment_name][algorithm_name] = {}
             table_tracks = split_tracks(experiment_tracks[algorithm_name])
 
-            for params, cur_tracks in table_tracks.iteritems():
+            for params, cur_tracks in table_tracks.items():
                 stat = calculate_statistics(cur_tracks, niter)
                 if stat == {}:
                     continue
@@ -117,7 +118,8 @@ def print_all_in_one_table(stats, gpu, params, output):
     median_table = []
     total_table = []
 
-    index = ["catboost", "xgboost", "lightgbm"]
+    #index = ["catboost", "xgboost", "lightgbm"]
+    index = ["lightgbm"]
 
     for algorithm_name in index:
         median_row = []
@@ -214,10 +216,12 @@ def split_tracks(tracks):
     samples = set(samples)
 
     table_tracks = {(depth, subsample): [] for depth in depths for subsample in samples}
+    #table_tracks = {(subsample,): [] for subsample in samples}
 
     for track in tracks:
         subsample = track.params.subsample if "subsample" in track.params_dict.keys() else 1.
         table_tracks[(track.params.max_depth, subsample)].append(track)
+        #table_tracks[(subsample,)].append(track)
 
     return table_tracks
 

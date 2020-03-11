@@ -28,7 +28,7 @@ def main():
         'letters',
         #'msrank',
         #'msrank-classification',
-        #'synthetic',
+        'synthetic',
         #'synthetic-5k-features'
     ]
 

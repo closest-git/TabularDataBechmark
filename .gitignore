@@ -6,6 +6,7 @@
 *.user
 *.userosscache
 *.sln.docstates
+result.json
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
@@ -304,3 +305,6 @@ ModelManifest.xml
 /python-package/shap_test.py
 *.pickle
 *.gz
+result_000.json
+result.json
+result.json

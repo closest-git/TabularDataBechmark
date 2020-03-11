@@ -122,6 +122,6 @@ EXPERIMENTS = {
 def params_to_str(params):
     info=''
     for key, value in params.items():
-        info = info+'{}_{}_'.format(key, value)
+        info = info+'{}[{}]'.format(key, value)
     return info
     #return ''.join(map(lambda (key, value): '{}[{}]'.format(key, str(value)), params.items()))

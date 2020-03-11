@@ -85,11 +85,12 @@ def get_dataset(experiment_name, dataset_dir):
     cache_dir = os.path.join(dataset_dir, experiment_name)
     if not os.path.exists(cache_dir):
         os.makedirs(cache_dir)
-    isPickle,pkl_path = False, os.path.join(cache_dir, "train_test.pickle")
-    if isPickle and os.path.exists(pkl_path):
-        with open(pkl_path, "rb") as fp:
-            data = pickle.load(fp)
-        return data
+    isPickle,pkl_path = True, os.path.join(cache_dir, "train_test.pickle")
+    if isPickle:
+        if os.path.exists(pkl_path):
+            with open(pkl_path, "rb") as fp:
+                data = pickle.load(fp)
+            return data
     else:
         train_file = os.path.join(cache_dir, "train.tsv")
         test_file = os.path.join(cache_dir, "test.tsv")
@@ -559,7 +560,8 @@ DATA_LOADERS = {
     "letters": letters,
     "msrank": msrank,
     "msrank-classification": msrank,
-    "synthetic": synthetic_regression,
+    #"synthetic": synthetic_regression,
+    "synthetic": synthetic_classification,
     "synthetic-5k-features": synthetic_regression_5k_features,
     "synthetic-classification": synthetic_classification,
     "yahoo": yahoo,
