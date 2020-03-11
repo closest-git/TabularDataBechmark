@@ -61,15 +61,14 @@ class Experiment:
                     print('Skipped: already evaluated')
                     continue
 
-                try:
-                    elapsed = learner.run(params, log_file)
-                    print('Timing: ' + str(elapsed) + ' sec')
+                #try:
+                elapsed = learner.run(params, log_file)
+                print('Timing: ' + str(elapsed) + ' sec')
 
-                    track = parse_log(algorithm_name, self.name, self.task, params_str,
-                                      log_file, params['iterations'])
-                    update_result_file(track, result_file)
-                except Exception as e:
-                    print('Exception during training: ' + repr(e))
+                track = parse_log(algorithm_name, self.name, self.task, params_str,log_file, params['iterations'])
+                update_result_file(track, result_file)
+                #except Exception as e:
+                #    print('Exception during training: ' + repr(e))
 
 
 EXPERIMENT_TYPE = {

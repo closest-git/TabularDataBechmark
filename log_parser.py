@@ -16,6 +16,7 @@ TIME_REGEX = r'Time: \[\s*(\d+\.?\d*)\s*\]\t'
 ELAPSED_REGEX = re.compile(r'Elapsed: (\d+\.?\d*)')
 LOG_LINE_REGEX = {
     'lightgbm': re.compile(TIME_REGEX + r'\[(\d+)\]\tvalid_0\'s (\w+): (\d+\.?\d*)'),
+    'litemort': re.compile(TIME_REGEX + r'\[(\d+)\]\tvalid_0\'s (\w+): (\d+\.?\d*)'),
     'xgboost': re.compile(TIME_REGEX + r'\[(\d+)\]\t([a-zA-Z\-]+):(\d+\.?\d*)'),
     'catboost': re.compile(TIME_REGEX + r'(\d+)'),
     'catboost-tsv': re.compile(r'(\d+)(\t(\d+\.?\d*))+\n')

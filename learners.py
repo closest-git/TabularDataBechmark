@@ -170,9 +170,9 @@ class LightGBMLearner(Learner):
         params = {
             'task': 'train',
             'boosting_type': 'gbdt',
-            'verbose': 0,
+            'verbose': 0,       #实际上无用，只由train-verbose_eval控制
             'random_state': RANDOM_SEED,
-            'bagging_freq': 1
+            'bagging_freq': 1,
         }
 
         if use_gpu:
@@ -220,8 +220,10 @@ class LightGBMLearner(Learner):
             params,
             self.train,
             num_boost_round=num_iterations,
-            valid_sets=self.test
+            valid_sets=self.test,
+            #verbose_eval=False,     #bool or int(default=True)
         )
+        print()
 
     def predict(self, n_tree):
         return self.learner.predict(self.test, num_iteration=n_tree)
@@ -257,9 +259,9 @@ class LiteMORTLearner(Learner):
                 params['metric'] = 'multi_error'
         elif metric == 'RMSE':
             params['metric'] = 'rmse'
-
-        self.train = lgb.Dataset(data.X_train, data.y_train)
-        self.test = lgb.Dataset(data.X_test, data.y_test, reference=self.train)
+        self.X_train, self.y_train = data.X_train, data.y_train
+        self.eval_set = [(data.X_test, data.y_test)]
+        self.test = data.X_test
 
         self.default_params = params
 
@@ -278,13 +280,8 @@ class LiteMORTLearner(Learner):
         del params_copy['iterations']
 
         params = Learner._fit(self, params_copy)
-        self.learner = lgb.train(
-            params,
-            self.train,
-            num_boost_round=num_iterations,
-            valid_sets=self.test
-        )
-
+        self.learner = LiteMORT(params).fit(self.X_train, self.y_train, eval_set=self.eval_set)
+        
     def predict(self, n_tree):
         return self.learner.predict(self.test, num_iteration=n_tree)
 
@@ -339,9 +336,10 @@ class CatBoostLearner(Learner):
 
         return prediction
 
-learners = [
-        #XGBoostLearner,
+learners = [        
         LightGBMLearner,
+        #XGBoostLearner,
+        #LiteMORTLearner,
         #CatBoostLearner
     ]
 ALGORITHMS = [method + '-' + device_type

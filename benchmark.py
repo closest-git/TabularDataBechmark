@@ -25,7 +25,7 @@ def main():
         #'airline',
         #'epsilon',
         #'higgs',
-        'letters',
+        #'letters',
         #'msrank',
         #'msrank-classification',
         'synthetic',
