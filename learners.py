@@ -3,16 +3,21 @@ import sys
 import time
 from copy import deepcopy
 from datetime import datetime
-
+from collections import namedtuple
 import catboost as cat
 import lightgbm as lgb
 import numpy as np
 import xgboost as xgb
 mort_root = f'E:/LiteMORT/'
-if True:    #liteMORT    
+if mort_root is not None:    #liteMORT    
     sys.path.insert(1, f'{mort_root}/python-package/')
     import litemort
     from litemort import *
+QF_root = f'E:/QuantumForest/'
+if QF_root is not None:    #liteMORT    
+    sys.path.insert(2, f'{QF_root}/python-package/')
+    import quantum_forest
+    from quantum_forest import *
 from sklearn.metrics import mean_squared_error, accuracy_score
 
 RANDOM_SEED = 0
@@ -285,6 +290,69 @@ class LiteMORTLearner(Learner):
     def predict(self, n_tree):
         return self.learner.predict(self.test, num_iteration=n_tree)
 
+class QuantumForestLearner(Learner):
+    def __init__(self, data, task, metric, use_gpu):
+        Learner.__init__(self)
+        params = {
+            'task': 'train',
+            'verbose': 0,
+            'random_state': RANDOM_SEED,
+        }
+
+        if use_gpu:
+            params["device"] = "gpu"
+
+        if task == "regression":
+            params["objective"] = "regression"
+        elif task == "multiclass":
+            params["objective"] = "multiclass"
+            params["num_class"] = int(np.max(data.y_test)) + 1
+        elif task == "binclass":
+            params["objective"] = "binary"
+        else:
+            raise ValueError("Unknown task: " + task)
+
+        if metric == 'Accuracy':
+            if task == 'binclass':
+                params['metric'] = 'binary_error'
+            elif task == 'multiclass':
+                params['metric'] = 'multi_error'
+        elif metric == 'RMSE':
+            params['metric'] = 'rmse'
+        
+        data_dict = data._asdict()
+        self.data = quantum_forest.TabularDataset(data.name,random_state=42,**data_dict)
+        self.data.onFold(0,params)
+        # self.X_train, self.y_train = self.data.X_train, self.data.y_train
+        # self.eval_set = [(self.data.X_test, self.data.y_test)]
+        # self.test = self.data.X_test
+
+        self.default_params = params
+
+    @staticmethod
+    def name():
+        return 'litemort'
+
+    def _fit(self, tunable_params):
+        params_copy = deepcopy(tunable_params)
+
+        if 'max_depth' in params_copy:
+            params_copy['num_leaves'] = 2 ** params_copy['max_depth']
+            del params_copy['max_depth']
+
+        num_iterations = params_copy['iterations']
+        del params_copy['iterations']
+        
+        params = Learner._fit(self, params_copy)
+        in_features = self.data.X_train.shape[1]
+        params.update({"model":"QForest","response_dim":3,"feat_info":None,"in_features":in_features})        
+        self.config = Dict2Obj(params)
+        self.learner = QuantumForest(self.config,self.data). \
+            fit(self.data.X_train, self.data.y_train, [(self.data.X_eval,self.data.y_eval)])
+        
+    def predict(self, n_tree):
+        return self.learner.predict(self.test, num_iteration=n_tree)
+
 class CatBoostLearner(Learner):
     def __init__(self, data, task, metric, use_gpu):
         Learner.__init__(self)
@@ -337,9 +405,10 @@ class CatBoostLearner(Learner):
         return prediction
 
 learners = [        
-        LightGBMLearner,
+        #LightGBMLearner,
         #XGBoostLearner,
         #LiteMORTLearner,
+        QuantumForestLearner,
         #CatBoostLearner
     ]
 ALGORITHMS = [method + '-' + device_type

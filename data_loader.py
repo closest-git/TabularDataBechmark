@@ -43,7 +43,8 @@ DATASET_CHARACTERISTIC = {
 }
 
 
-Data = namedtuple("Data", ["name", "X_train", "X_test", "y_train", "y_test"])
+# Data = namedtuple("Data", ["name", "X_train", "X_test", "y_train", "y_test"])
+Data = namedtuple("Data", ["name", "X_train","X_valid", "X_test", "y_train","y_valid", "y_test"])
 
 
 def get_from_cache(experiment_name, train_file, test_file):
@@ -85,7 +86,7 @@ def get_dataset(experiment_name, dataset_dir):
     cache_dir = os.path.join(dataset_dir, experiment_name)
     if not os.path.exists(cache_dir):
         os.makedirs(cache_dir)
-    isPickle,pkl_path = True, os.path.join(cache_dir, "train_test.pickle")
+    isPickle,pkl_path = True, os.path.join(cache_dir, "train_valid_test.pickle")
     if isPickle:
         if os.path.exists(pkl_path):
             with open(pkl_path, "rb") as fp:
@@ -108,10 +109,9 @@ def get_dataset(experiment_name, dataset_dir):
         X_test = X[1]
         y_test = y[1]
     else:
-        X_train, X_test, y_train, y_test = \
-            train_test_split(X, y, test_size=DEFAULT_TEST_SIZE, random_state=0)
-
-    data = Data(experiment_name, X_train, X_test, y_train, y_test)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=DEFAULT_TEST_SIZE, random_state=0)
+    X_train, X_valid, y_train, y_valid = train_test_split(X_train,y_train, test_size=0.25, random_state=0)
+    data = Data(experiment_name, X_train,X_valid, X_test, y_train,y_valid, y_test)
     if isPickle:
         with open(pkl_path, "wb") as fp:
             pickle.dump(data, fp)
