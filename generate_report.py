@@ -163,6 +163,7 @@ def print_all_in_one_table(stats, gpu,learners, params, output):
         f.write('\n')
         f.write(total_table.to_string())
         f.write('\n')
+    print(f"====== TIME stats\t@{output}!!!!")
 
 
 def print_experiment_table(stats, output):

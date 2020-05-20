@@ -323,6 +323,12 @@ class QuantumForestLearner(Learner):
         data_dict = data._asdict()
         self.data = quantum_forest.TabularDataset(data.name,random_state=42,**data_dict)
         self.data.onFold(0,params)
+        self.config = QForest_config(self.data,0.002,feat_info="")  
+        self.config, self.visual = InitExperiment(self.config, 0)      
+        self.config.in_features = self.data.X_train.shape[1]
+        self.config.device = quantum_forest.OnInitInstance(seed=42)
+        self.config.model = "QForest"
+        self.config.tree_module = quantum_forest.DeTree   
         # self.X_train, self.y_train = self.data.X_train, self.data.y_train
         # self.eval_set = [(self.data.X_test, self.data.y_test)]
         # self.test = self.data.X_test
@@ -331,7 +337,7 @@ class QuantumForestLearner(Learner):
 
     @staticmethod
     def name():
-        return 'litemort'
+        return 'QuantumForest'
 
     def _fit(self, tunable_params):
         params_copy = deepcopy(tunable_params)
@@ -342,13 +348,13 @@ class QuantumForestLearner(Learner):
 
         num_iterations = params_copy['iterations']
         del params_copy['iterations']
-        
-        params = Learner._fit(self, params_copy)
-        in_features = self.data.X_train.shape[1]
-        params.update({"model":"QForest","response_dim":3,"feat_info":None,"in_features":in_features})        
-        self.config = Dict2Obj(params)
+        self.config.no_inner_writer = True
+        # params = Learner._fit(self, params_copy)
+        # params.update({"model":"QForest","response_dim":3,"feat_info":None,"in_features":in_features})        
+        # self.config = Dict2Obj(params)
+        flags = {"test_once":True,'report_frequency':10}
         self.learner = QuantumForest(self.config,self.data). \
-            fit(self.data.X_train, self.data.y_train, [(self.data.X_eval,self.data.y_eval)])
+            fit(self.data.X_train, self.data.y_train, [(self.data.X_valid,self.data.y_valid)])  #,flags=flags
         
     def predict(self, n_tree):
         return self.learner.predict(self.test, num_iteration=n_tree)
@@ -406,9 +412,10 @@ class CatBoostLearner(Learner):
 
 learners = [        
         #LightGBMLearner,
+        QuantumForestLearner,
         #XGBoostLearner,
         #LiteMORTLearner,
-        QuantumForestLearner,
+        
         #CatBoostLearner
     ]
 ALGORITHMS = [method + '-' + device_type

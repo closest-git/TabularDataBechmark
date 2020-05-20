@@ -17,6 +17,7 @@ ELAPSED_REGEX = re.compile(r'Elapsed: (\d+\.?\d*)')
 LOG_LINE_REGEX = {
     'lightgbm': re.compile(TIME_REGEX + r'\[(\d+)\]\tvalid_0\'s (\w+): (\d+\.?\d*)'),
     'litemort': re.compile(TIME_REGEX + r'\[(\d+)\]\tvalid_0\'s (\w+): (\d+\.?\d*)'),
+    'QuantumForest': re.compile(TIME_REGEX + r'\[(\d+)\]\tvalid_0\'s (\w+): (\d+\.?\d*)'),  #ACCU@Test
     'xgboost': re.compile(TIME_REGEX + r'\[(\d+)\]\t([a-zA-Z\-]+):(\d+\.?\d*)'),
     'catboost': re.compile(TIME_REGEX + r'(\d+)'),
     'catboost-tsv': re.compile(r'(\d+)(\t(\d+\.?\d*))+\n')
@@ -120,6 +121,7 @@ class Track:
 TASK_TYPES_ACCURACY = ['binclass', 'multiclass']
 METRIC_NAME = {
     'lightgbm': {'regression': 'rmse', 'binclass': 'binary_error', 'multiclass': 'multi_error'},
+    'QuantumForest': {'regression': 'rmse', 'binclass': 'binary_error', 'multiclass': 'multi_error'},
     'xgboost': {'regression': 'eval-rmse', 'binclass': 'eval-error', 'multiclass': 'eval-merror'},
     'catboost': {'regression': 'RMSE', 'binclass': 'Accuracy', 'multiclass': 'Accuracy'}
 }
@@ -154,6 +156,7 @@ def parse_catboost_log(test_error_file, task_type, iterations):
 
 
 def parse_log(algorithm_name, experiment_name, task_type, params_str, file_name, iterations):
+    print(f"====== LOG    \'{experiment_name}_{algorithm_name}\'_{task_type}\tparam={params_str}" )
     time_series = []
     values = []
     algorithm = algorithm_name.rstrip('-CPU|GPU')
@@ -175,7 +178,7 @@ def parse_log(algorithm_name, experiment_name, task_type, params_str, file_name,
         for i, match in enumerate(matches):
             time_series.append(float(match[0]))
 
-            if algorithm in ['lightgbm', 'xgboost']:
+            if algorithm in ['lightgbm', 'xgboost','QuantumForest']:
                 metric = match[2]
 
                 # Sanity check on parsed metric

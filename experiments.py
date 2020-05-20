@@ -19,6 +19,7 @@ def check_exists(hash_id, result_file):
 
 
 def update_result_file(track, result_file):
+    print(f"====== SAVE@{result_file}")
     chunk = track.dump_to_json()
 
     with open(result_file, 'r') as f:
