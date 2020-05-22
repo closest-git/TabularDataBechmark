@@ -8,12 +8,12 @@ import catboost as cat
 import lightgbm as lgb
 import numpy as np
 import xgboost as xgb
-mort_root = f'E:/LiteMORT/'
+mort_root = f'../LiteMORT/'
 if mort_root is not None:    #liteMORT    
     sys.path.insert(1, f'{mort_root}/python-package/')
     import litemort
     from litemort import *
-QF_root = f'E:/QuantumForest/'
+QF_root = f'../QuantumForest/'
 if QF_root is not None:    #liteMORT    
     sys.path.insert(2, f'{QF_root}/python-package/')
     import quantum_forest
@@ -33,6 +33,7 @@ class TimeAnnotatedFile:
             return
 
         cur_time = datetime.now()
+        #new_message = message
         new_message = "Time: [%d.%06d]\t%s" % (cur_time.second, cur_time.microsecond, message)
         self.file_descriptor.write(new_message)
 
@@ -291,7 +292,7 @@ class LiteMORTLearner(Learner):
         return self.learner.predict(self.test, num_iteration=n_tree)
 
 class QuantumForestLearner(Learner):
-    def __init__(self, data, task, metric, use_gpu):
+    def __init__(self, data_tuple, task, metric, use_gpu):
         Learner.__init__(self)
         params = {
             'task': 'train',
@@ -320,8 +321,8 @@ class QuantumForestLearner(Learner):
         elif metric == 'RMSE':
             params['metric'] = 'rmse'
         
-        data_dict = data._asdict()
-        self.data = quantum_forest.TabularDataset(data.name,random_state=42,**data_dict)
+        data_dict = data_tuple._asdict()
+        self.data = quantum_forest.TabularDataset(data_tuple.name,random_state=42,**data_dict)
         self.data.onFold(0,params)
         self.config = QForest_config(self.data,0.002,feat_info="")  
         self.config, self.visual = InitExperiment(self.config, 0)      
@@ -349,6 +350,8 @@ class QuantumForestLearner(Learner):
         num_iterations = params_copy['iterations']
         del params_copy['iterations']
         self.config.no_inner_writer = True
+        self.config.nMostEpochs = num_iterations
+        self.config.lr_base = params_copy['learning_rate']
         # params = Learner._fit(self, params_copy)
         # params.update({"model":"QForest","response_dim":3,"feat_info":None,"in_features":in_features})        
         # self.config = Dict2Obj(params)
@@ -411,8 +414,8 @@ class CatBoostLearner(Learner):
         return prediction
 
 learners = [        
-        #LightGBMLearner,
-        QuantumForestLearner,
+        LightGBMLearner,
+        #QuantumForestLearner,
         #XGBoostLearner,
         #LiteMORTLearner,
         

@@ -3,7 +3,7 @@ import bz2
 import os
 import sys
 import tarfile
-
+import time
 import numpy as np
 import pandas as pd
 import pickle
@@ -18,30 +18,6 @@ else:
 
 
 DEFAULT_TEST_SIZE = 0.2
-
-
-DATASET_CHARACTERISTIC = {
-    "abalone": (4177, 8),
-    "airline": (115000000, 13),
-    "airline-one-hot": (10100000, 700),
-    "aloi": (108000, 128),
-    "bosch": (1184000, 968),
-    "cover-type": (581012, 54),
-    "epsilon": (500000, 2000),
-    "epsilon-sampled": (500000, 28),
-    "higgs": (11000000, 28),
-    "higgs-sampled": (500000, 28),
-    "letters": (20000, 16),
-    "msrank": (1200192, 137),
-    "msrank-classification": (1200192, 137),
-    "synthetic": (10000000, 100),
-    "synthetic-5k-features": (100000, 5000),
-    "synthetic-classification": (500000, 28),
-    "yahoo": (638794, 700),
-    "yahoo-classification": (638794, 700),
-    "year-msd": (515345, 90)
-}
-
 
 # Data = namedtuple("Data", ["name", "X_train", "X_test", "y_train", "y_test"])
 Data = namedtuple("Data", ["name", "X_train","X_valid", "X_test", "y_train","y_valid", "y_test"])
@@ -80,9 +56,39 @@ def save_to_cache(data, train_file, test_file):
 
     test_df.to_csv(test_file, index=False, header=False, sep='\t')
 
+#(X,y)的组合至少有3种，1，2，3
+def data_split(name,X,y):
+    if len(X)==3:
+        X_train, X_valid,X_test = X[0],X[1],X[2]
+        y_train,y_valid, y_test = y[0],y[1],y[2]
+    else:
+        if len(X)==2:
+            X_train = X[0]
+            y_train = y[0]
+
+            X_test = X[1]
+            y_test = y[1]
+        else:
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=DEFAULT_TEST_SIZE, random_state=0)
+        X_train, X_valid, y_train, y_valid = train_test_split(X_train,y_train, test_size=0.25, random_state=0)
+    data = Data(name, X_train,X_valid, X_test, y_train,y_valid, y_test)
+    desc = f"\ttrain={X_train.shape}\n\tvalid={X_valid.shape}\n\ttest={X_test.shape}"
+    return data,desc
 
 def get_dataset(experiment_name, dataset_dir):
-    data_loader = DATA_LOADERS[experiment_name]
+    t0=time.time()
+    if experiment_name in ["YEAR", "MICROSOFT","HIGGS","YAHOO","CLICK",'EPSILON']:    #暂时借用QuantumForest的数据
+        sys.path.insert(2, f'../QuantumForest/python-package/')
+        import quantum_forest
+        data_root = "E:/fengnaixing/cys/Datasets/"
+        data_root = "F:/Datasets/"
+        qf_data = quantum_forest.TabularDataset(experiment_name,data_path=data_root, random_state=1337, quantile_transform=True, quantile_noise=1e-3)
+        if hasattr(qf_data,"X"):
+            data,desc = data_split(experiment_name, qf_data.X,qf_data.Y)       
+        else:
+            data,desc = data_split(experiment_name, [qf_data.X_train,qf_data.X_valid, qf_data.X_test],[qf_data.y_train, qf_data.y_valid, qf_data.y_test])  
+        return data,f"\tLoad={time.time()-t0:.2f}\n{desc}"
+
     cache_dir = os.path.join(dataset_dir, experiment_name)
     if not os.path.exists(cache_dir):
         os.makedirs(cache_dir)
@@ -91,7 +97,8 @@ def get_dataset(experiment_name, dataset_dir):
         if os.path.exists(pkl_path):
             with open(pkl_path, "rb") as fp:
                 data = pickle.load(fp)
-            return data
+            desc = f"tLoad={time.time()-t0:.2f}\ntrain={data.X_train.shape}\nvalid={data.X_valid.shape}\ntest={data.X_test.shape}"
+            return data,desc
     else:
         train_file = os.path.join(cache_dir, "train.tsv")
         test_file = os.path.join(cache_dir, "test.tsv")
@@ -99,36 +106,31 @@ def get_dataset(experiment_name, dataset_dir):
         if all([os.path.exists(file_name) for file_name in [train_file, test_file]]):
             print('Loading from cache')
             return get_from_cache(experiment_name, train_file, test_file)
-
+    data_loader = DATA_LOADERS[experiment_name]
     X, y = data_loader(dataset_dir)
 
-    if experiment_name in ALREADY_SPLIT:
-        X_train = X[0]
-        y_train = y[0]
-
-        X_test = X[1]
-        y_test = y[1]
+    if True:
+        data,desc = data_split(X,y)
     else:
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=DEFAULT_TEST_SIZE, random_state=0)
-    X_train, X_valid, y_train, y_valid = train_test_split(X_train,y_train, test_size=0.25, random_state=0)
-    data = Data(experiment_name, X_train,X_valid, X_test, y_train,y_valid, y_test)
+        if experiment_name in ALREADY_SPLIT:
+            X_train = X[0]
+            y_train = y[0]
+
+            X_test = X[1]
+            y_test = y[1]
+        else:
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=DEFAULT_TEST_SIZE, random_state=0)
+        X_train, X_valid, y_train, y_valid = train_test_split(X_train,y_train, test_size=0.25, random_state=0)
+        data = Data(experiment_name, X_train,X_valid, X_test, y_train,y_valid, y_test)
     if isPickle:
         with open(pkl_path, "wb") as fp:
             pickle.dump(data, fp)
     else:
         save_to_cache(data, train_file, test_file)
+    
+    desc = f"\tLoad={time.time()-t0:.2f}\n\ttrain={X_train.shape}\n\tvalid={X_valid.shape}\n\ttest={X_test.shape}"
 
-    return data
-
-
-ALREADY_SPLIT = {
-    "airline-one-hot",
-    "cover-type",
-    "epsilon-sampled",
-    "msrank",
-    "msrank-classification",
-    "epsilon"
-}
+    return data,desc
 
 
 def abalone(dataset_dir):
@@ -545,6 +547,27 @@ def year(dataset_dir):
     y = df.iloc[:, 0].values
     return X, y
 
+DATASET_CHARACTERISTIC = {
+    "abalone": (4177, 8),
+    "airline": (115000000, 13),
+    "airline-one-hot": (10100000, 700),
+    "aloi": (108000, 128),
+    "bosch": (1184000, 968),
+    "cover-type": (581012, 54),
+    "epsilon": (500000, 2000),
+    "epsilon-sampled": (500000, 28),
+    "higgs": (11000000, 28),
+    "higgs-sampled": (500000, 28),
+    "letters": (20000, 16),
+    "msrank": (1200192, 137),
+    "msrank-classification": (1200192, 137),
+    "synthetic": (10000000, 100),
+    "synthetic-5k-features": (100000, 5000),
+    "synthetic-classification": (500000, 28),
+    "yahoo": (638794, 700),
+    "yahoo-classification": (638794, 700),
+    "year-msd": (515345, 90)
+}
 
 DATA_LOADERS = {
     "abalone": abalone,
@@ -566,5 +589,20 @@ DATA_LOADERS = {
     "synthetic-classification": synthetic_classification,
     "yahoo": yahoo,
     "yahoo-classification": yahoo,
-    "year-msd": year
+    "year-msd": year,
+    "year": year
 }
+
+ALREADY_SPLIT = {
+    "airline-one-hot",
+    "cover-type",
+    "epsilon-sampled",
+    "msrank",
+    "msrank-classification",
+    "epsilon",
+    "year",
+    "yahoo",
+    "higgs",
+    "click",
+}
+

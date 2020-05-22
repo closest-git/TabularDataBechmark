@@ -41,13 +41,14 @@ class Experiment:
         self.task = task
         self.metric = metric
 
-    def run(self, use_gpu, learners, params_grid, dataset_dir, result_file, out_dir):
-        dataset = get_dataset(self.name, dataset_dir)
+    def run(self, use_gpu, learners, params_grid, dataset, result_file, out_dir):
+        # dataset = get_dataset(self.name, dataset_dir)
 
         device_type = 'GPU' if use_gpu else 'CPU'
 
         for LearnerType in learners:
             learner = LearnerType(dataset, self.task, self.metric, use_gpu)
+            
             algorithm_name = learner.name() + '-' + device_type
             print('Started to train ' + algorithm_name)
 
@@ -55,7 +56,7 @@ class Experiment:
                 params_str = params_to_str(params)
                 log_file = os.path.join(out_dir, self.name, algorithm_name, params_str + '.log')
 
-                print(params_str)
+                print(f"\n===== {params_str} ...... ")
 
                 hash_id = Track.hash(self.name, algorithm_name, self.task, params_str)
                 if check_exists(hash_id, result_file):
@@ -64,7 +65,7 @@ class Experiment:
 
                 #try:
                 elapsed = learner.run(params, log_file)
-                print('Timing: ' + str(elapsed) + ' sec')
+                print('===== Timing: ' + str(elapsed) + ' sec')
 
                 track = parse_log(algorithm_name, self.name, self.task, params_str,log_file, params['iterations'])
                 update_result_file(track, result_file)
@@ -110,7 +111,14 @@ EXPERIMENT_TYPE = {
     "yahoo":
         ["regression", "RMSE"],
     "yahoo-classification":
-        ["multiclass", "Accuracy"]
+        ["multiclass", "Accuracy"],
+        
+    "YEAR": ["regression", "RMSE"],
+    "MICROSOFT": ["regression", "RMSE"],
+    "YAHOO": ["regression", "RMSE"],
+        #"HIGGS",
+        #"CLICK",
+        #'EPSILON',
 }
 
 EXPERIMENTS = {
